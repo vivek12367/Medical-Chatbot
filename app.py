@@ -1,12 +1,12 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request
 from src.helper import download_hugging_face_embeddings
 from langchain_pinecone import PineconeVectorStore
-from langchain_openai import OpenAI
+from langchain_huggingface import HuggingFaceEndpoint
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from dotenv import load_dotenv
-from src.prompt import *
+from src.prompt import system_prompt
 import os
 
 app = Flask(__name__)
@@ -17,7 +17,7 @@ PINECONE_API_KEY=os.environ.get('PINECONE_API_KEY')
 OPENAI_API_KEY=os.environ.get('OPENAI_API_KEY')
 
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
-os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 embeddings = download_hugging_face_embeddings()
 
@@ -33,10 +33,14 @@ docsearch = PineconeVectorStore.from_existing_index(
 retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k":3})
 
 
-llm = OpenAI(temperature=0.4, max_tokens=500)
+llm = HuggingFaceEndpoint(
+    repo_id="tiiuae/falcon-7b-instruct",  # Replace with another HF model if needed
+    temperature=0.4,
+    model_kwargs={"token": HF_TOKEN, "max_length": "500"}
+)
 prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", system_prompt),
+        ("system", system_prompt), 
         ("human", "{input}"),
     ]
 )
