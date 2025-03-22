@@ -57,11 +57,19 @@ def index():
 @app.route("/get", methods=["GET", "POST"])
 def chat():
     msg = request.form["msg"]
-    input = msg
-    print(input)
+    print("User Input:", msg)
+
     response = rag_chain.invoke({"input": msg})
-    print("Response : ", response["answer"])
-    return str(response["answer"])
+    raw_answer = response["answer"]
+
+    # Clean known artifacts from RAG
+    cleaned_answer = raw_answer.replace("User", "").replace("Mini", "")
+    cleaned_answer = cleaned_answer.removeprefix("Assistant:").lstrip(", ").strip()
+
+    print("Cleaned Response:", cleaned_answer)
+    return cleaned_answer
+
+
 
 
 
