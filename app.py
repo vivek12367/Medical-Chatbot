@@ -56,22 +56,28 @@ def index():
 
 @app.route("/get", methods=["GET", "POST"])
 def chat():
-    msg = request.form["msg"]
-    print("User Input:", msg)
+    msg = request.form["msg"].strip()
 
+    # Optional: Handle greetings directly
+    greetings = ["hi", "hello", "hey"]
+    if msg.lower() in greetings:
+        return "Hi there! How can I help you today?"
+
+    # Get RAG response
     response = rag_chain.invoke({"input": msg})
     raw_answer = response["answer"]
 
-    # Clean known artifacts from RAG
-    cleaned_answer = raw_answer.replace("User", "").replace("Mini", "")
-    cleaned_answer = cleaned_answer.removeprefix("Assistant:").lstrip(", ").strip()
+    # Clean up unwanted role labels and extra commas
+    cleaned_answer = (
+        raw_answer.replace("Mini:", "")
+                  .replace("Mini", "")
+                  .replace("User:", "")
+                  .replace("User", "")
+                  .lstrip(", ")
+                  .strip()
+    )
 
-    print("Cleaned Response:", cleaned_answer)
     return cleaned_answer
-
-
-
-
 
 
 if __name__ == '__main__':
